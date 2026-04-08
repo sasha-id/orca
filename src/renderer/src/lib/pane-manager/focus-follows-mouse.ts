@@ -25,7 +25,7 @@ export function shouldFollowMouseFocus(input: FocusFollowsMouseInput): boolean {
   if (input.activePaneId === input.hoveredPaneId) {
     return false
   }
-  // Why event.buttons !== 0: any held mouse button means a selection or
+  // Why mouseButtons !== 0: any held mouse button means a selection or
   // a drag is in progress. Switching focus mid-drag would break xterm.js
   // text selection and the pane drag-to-reorder flow. This single check
   // also covers drag-to-reorder, since the drag is always button-held.
