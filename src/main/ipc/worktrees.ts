@@ -11,7 +11,8 @@ import type {
 } from '../../shared/types'
 import { getPRForBranch } from '../github/client'
 import { listWorktrees, addWorktree, removeWorktree } from '../git/worktree'
-import { getGitUsername, getDefaultBaseRef, getBranchConflictKind } from '../git/repo'
+import { getGitUsername, getDefaultBaseRef, getBranchConflictKind, isBareRepo } from '../git/repo'
+import { isWorktreesDirIgnored, addWorktreesDirToGitignore } from '../git/gitignore'
 import { gitExecFileSync } from '../git/runner'
 import { listRepoWorktrees } from '../repo-worktrees'
 import {
@@ -45,6 +46,8 @@ export function registerWorktreeHandlers(mainWindow: BrowserWindow, store: Store
   ipcMain.removeHandler('worktrees:updateMeta')
   ipcMain.removeHandler('worktrees:persistSortOrder')
   ipcMain.removeHandler('hooks:check')
+  ipcMain.removeHandler('gitignore:checkWorktreesIgnored')
+  ipcMain.removeHandler('gitignore:addWorktreesEntry')
 
   ipcMain.handle('worktrees:listAll', async () => {
     // Why: use ensureAuthorizedRootsCache (not rebuild) to avoid redundantly
@@ -286,6 +289,35 @@ export function registerWorktreeHandlers(mainWindow: BrowserWindow, store: Store
       hasHooks: has,
       hooks
     }
+  })
+
+  ipcMain.handle('gitignore:checkWorktreesIgnored', async (_event, args: { repoId: string }) => {
+    const repo = store.getRepo(args.repoId)
+    // Folder repos can't have worktrees, and bare repos have no working tree
+    // to dirty. In both cases, treat as already-handled to short-circuit any
+    // UI gating in the renderer. Missing repo also returns ignored: true so
+    // the UI can't leak error detail via this handler.
+    if (!repo || isFolderRepo(repo) || isBareRepo(repo.path)) {
+      return { ignored: true }
+    }
+    try {
+      return { ignored: await isWorktreesDirIgnored(repo.path) }
+    } catch (error) {
+      console.warn('[gitignore] read failed for', repo.path, error)
+      // Why fail-open (return ignored: false) instead of fail-closed: a closed
+      // failure would silently suppress the prompt and the user could end up
+      // with thousands of untracked worktree files in `git status` without
+      // ever knowing why. Open failure shows the prompt; user decides.
+      return { ignored: false }
+    }
+  })
+
+  ipcMain.handle('gitignore:addWorktreesEntry', async (_event, args: { repoId: string }) => {
+    const repo = store.getRepo(args.repoId)
+    if (!repo || isFolderRepo(repo)) {
+      throw new Error('Cannot modify .gitignore for this repo type.')
+    }
+    await addWorktreesDirToGitignore(repo.path)
   })
 }
 
