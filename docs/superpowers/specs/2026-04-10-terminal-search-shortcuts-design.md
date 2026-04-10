@@ -29,17 +29,18 @@ A `MutableRefObject<{ query: string; caseSensitive: boolean; regex: boolean }>` 
 
 **`TerminalSearch.tsx`**
 - Accept `searchStateRef: React.MutableRefObject<{ query: string; caseSensitive: boolean; regex: boolean }>` prop
-- Sync the ref whenever `query`, `caseSensitive`, or `regex` changes (inside the existing `useEffect` or via direct assignment after `setState`)
+- Sync the ref whenever `query`, `caseSensitive`, or `regex` changes — inside the existing `useEffect` that already depends on `[query, caseSensitive, regex]`, so all three values are kept in sync together
 
 **`keyboard-handlers.ts`**
 - Add `searchOpen` (boolean) and `searchStateRef` to `KeyboardHandlersDeps`
-- Add handler for `Cmd+G` / `Cmd+Shift+G` inside `onKeyDown`:
+- Exempt `[data-terminal-search-root]` descendants from the `isEditableTarget` early return for `Cmd+G` / `Cmd+Shift+G`. Without this, pressing the shortcut while the search input has focus would be silently swallowed. The paste handler in `TerminalPane` already uses this same `data-terminal-search-root` exemption pattern.
+- Add handler for `Cmd+G` / `Cmd+Shift+G` inside `onKeyDown`, placed before the `isEditableTarget` guard:
   - Guard: `searchOpen` must be true and `searchStateRef.current.query` must be non-empty
   - Read `query`, `caseSensitive`, `regex` from `searchStateRef.current`
   - Get active pane's `searchAddon` via `manager.getActivePane().searchAddon`
-  - Call `findNext` or `findPrevious` with the current options
+  - Call `findNext` or `findPrevious` with `{ caseSensitive, regex }` (no `incremental` — matches the chevron button behavior, not the live-typing behavior)
   - Call `pane.terminal.focus()` to return focus to the terminal
-  - `preventDefault` + `stopPropagation`
+  - `preventDefault` + `stopPropagation` — important to suppress macOS/Electron's native "find next" which could otherwise trigger the built-in find bar
 
 ### Edge cases
 
@@ -47,3 +48,4 @@ A `MutableRefObject<{ query: string; caseSensitive: boolean; regex: boolean }>` 
 - **No active pane**: no-op (existing pane guard)
 - **Search closed**: no-op (`searchOpen` guard)
 - **Key repeat**: filtered by existing `if (e.repeat) return` at top of `onKeyDown`
+- **Focus in search input**: `Cmd+G` / `Cmd+Shift+G` must bypass the `isEditableTarget` guard for search input descendants (see keyboard-handlers.ts changes above)
