@@ -29,13 +29,13 @@ A `MutableRefObject<{ query: string; caseSensitive: boolean; regex: boolean }>` 
 
 **`TerminalSearch.tsx`**
 - Accept `searchStateRef: React.MutableRefObject<{ query: string; caseSensitive: boolean; regex: boolean }>` prop
-- Sync the ref whenever `query`, `caseSensitive`, or `regex` changes — inside the existing `useEffect` that already depends on `[query, caseSensitive, regex]`, so all three values are kept in sync together
+- Sync the ref whenever `query`, `caseSensitive`, or `regex` changes — inside the existing `useEffect` that already depends on `[query, caseSensitive, regex]`, so all three values are kept in sync together. Note: the existing effect has an early return when query is empty (`clearDecorations`), so the ref won't update on clear — this is benign because the keyboard handler already guards on non-empty query
 
 **`keyboard-handlers.ts`**
 - Add `searchOpen` (boolean) and `searchStateRef` to `KeyboardHandlersDeps`
 - Exempt `[data-terminal-search-root]` descendants from the `isEditableTarget` early return for `Cmd+G` / `Cmd+Shift+G`. Without this, pressing the shortcut while the search input has focus would be silently swallowed. The paste handler in `TerminalPane` already uses this same `data-terminal-search-root` exemption pattern.
-- Add handler for `Cmd+G` / `Cmd+Shift+G` inside `onKeyDown`, placed before the `isEditableTarget` guard:
-  - Guard: `searchOpen` must be true and `searchStateRef.current.query` must be non-empty
+- Add handler for `Cmd+G` / `Cmd+Shift+G` inside `onKeyDown`, placed before the `isEditableTarget` guard. Because this runs before the `const mod = ...` declaration, the handler must perform its own mod-key check (`isMac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey`) and key match (`e.key.toLowerCase() === 'g'`) inline:
+  - Guard: mod key active, key is `g`, `searchOpen` is true, `searchStateRef.current.query` is non-empty
   - Read `query`, `caseSensitive`, `regex` from `searchStateRef.current`
   - Get active pane's `searchAddon` via `manager.getActivePane().searchAddon`
   - Call `findNext` or `findPrevious` with `{ caseSensitive, regex }` (no `incremental` — matches the chevron button behavior, not the live-typing behavior)
