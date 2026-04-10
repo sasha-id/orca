@@ -330,14 +330,20 @@ Update the `TerminalSearch` JSX (around line 567) to include the new prop:
 
 - [ ] **Step 4: Add `searchStateRef` prop to `TerminalSearch`**
 
-In `TerminalSearch.tsx`, update the props type and destructuring:
+In `TerminalSearch.tsx`, import the `SearchState` type from `keyboard-handlers` and use it in the props type. This keeps the type definition in one place so it can't silently diverge:
+
+```ts
+import type { SearchState } from '@/components/terminal-pane/keyboard-handlers'
+```
+
+Then update the props type and destructuring:
 
 ```ts
 type TerminalSearchProps = {
   isOpen: boolean
   onClose: () => void
   searchAddon: SearchAddon | null
-  searchStateRef: React.MutableRefObject<{ query: string; caseSensitive: boolean; regex: boolean }>
+  searchStateRef: React.MutableRefObject<SearchState>
 }
 
 export default function TerminalSearch({
