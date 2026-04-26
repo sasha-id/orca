@@ -29,6 +29,30 @@
   overflow-y: auto;
 }
 
+/* Thin (5px) terminal scrollbar. Why this needs !important + a specific
+   selector: xterm.js v6 does NOT use the legacy .xterm-viewport for
+   scrolling when the canvas/WebGL renderer is active (which Orca uses
+   unconditionally — see pane-lifecycle.ts ENABLE_WEBGL_RENDERER). Instead
+   it embeds VS Code's scrollable-element library, which creates a custom
+   DOM scrollbar at .xterm-scrollable-element > .scrollbar.vertical.
+   Its width is hardcoded to 10px via the verticalScrollbarSize option
+   (node_modules/@xterm/xterm/src/vs/base/browser/ui/scrollbar/
+   scrollableElement.ts line 704) and xterm.js does not expose this option
+   on the Terminal constructor — only the slider COLORS are theme-configurable.
+   The width is written as an inline style by VerticalScrollbar._renderDomNode
+   (verticalScrollbar.ts:75), so overriding it requires !important. We also
+   zero the slider's left offset because VS Code centers it based on
+   (verticalScrollbarSize - verticalSliderSize) / 2, which is computed from
+   the unmodified defaults. */
+.xterm .xterm-scrollable-element > .scrollbar.vertical {
+  width: 5px !important;
+}
+
+.xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
+  width: 5px !important;
+  left: 0 !important;
+}
+
 /* xterm.css sets position:absolute;top:0 on .xterm-helpers but omits left,
    leaving left:auto. In Electron's Blink, left:auto can resolve to a non-zero
    value and offset the IME candidate window away from the cursor. Anchoring it
