@@ -72,10 +72,15 @@ export async function isWorktreesDirIgnored(repoPath: string): Promise<boolean> 
 
 export async function addWorktreesDirToGitignore(repoPath: string): Promise<void> {
   const content = await readGitignore(repoPath)
-  // Why idempotent re-check: a racing second click or rapid second create
-  // must not duplicate the entry. Trusting the renderer to only call this
-  // when needed would be fragile — re-checking costs one file read and makes
-  // the function safe to call repeatedly.
+  // Why re-check: a rapid second click or an out-of-band edit between the
+  // renderer's checkWorktreesIgnored call and this write usually means the
+  // entry is already present. The re-read costs one file read and makes the
+  // common-case repeated call a no-op. Note this is NOT atomic — two truly
+  // concurrent writers can both see `ignored: false` here and both append,
+  // producing a duplicate `.worktrees/` line. The duplicate is functionally
+  // harmless (git applies the first matching pattern), so we accept the
+  // narrow TOCTOU window rather than introducing a lockfile or rename
+  // dance for this low-risk path.
   if (isWorktreesDirIgnoredByGitignore(content)) {
     return
   }
