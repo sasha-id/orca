@@ -8,7 +8,7 @@ import { isWslPath, parseWslPath, getWslHome } from '../wsl'
 import { randomUUID } from 'crypto'
 import { join } from 'path'
 import { rm } from 'fs/promises'
-import type { CreateWorktreeResult, Repo } from '../../shared/types'
+import type { CreateWorktreeResult, Repo, WorktreeLocation } from '../../shared/types'
 import { isFolderRepo } from '../../shared/repo-kind'
 import type {
   RuntimeGraphStatus,
@@ -113,6 +113,7 @@ type RuntimeStore = {
     workspaceDir: string
     nestWorkspaces: boolean
     refreshLocalBaseRefOnWorktreeCreate: boolean
+    worktreeLocation: WorktreeLocation
     branchPrefix: string
     branchPrefixCustom: string
   }

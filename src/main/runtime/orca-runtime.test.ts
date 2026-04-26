@@ -130,6 +130,7 @@ const store = {
     workspaceDir: '/tmp/workspaces',
     nestWorkspaces: false,
     refreshLocalBaseRefOnWorktreeCreate: false,
+    worktreeLocation: 'external' as const,
     branchPrefix: 'none',
     branchPrefixCustom: ''
   })
@@ -889,6 +890,7 @@ describe('OrcaRuntimeService', () => {
         workspaceDir: 'C:\\workspaces',
         nestWorkspaces: false,
         refreshLocalBaseRefOnWorktreeCreate: false,
+        worktreeLocation: 'external' as const,
         branchPrefix: 'none',
         branchPrefixCustom: ''
       })
