@@ -395,8 +395,9 @@ export function GeneralPane({ settings, updateSettings }: GeneralPaneProps): Rea
             {settings.worktreeLocation === 'in-repo' ? (
               <>
                 New worktrees will be created at <code>&lt;repo&gt;/.worktrees/&lt;name&gt;</code>.
-                Orca will offer to add <code>.worktrees/</code> to each repo&apos;s{' '}
-                <code>.gitignore</code> on first create.
+                Orca will add <code>.worktrees/</code> to each repo&apos;s <code>.gitignore</code>{' '}
+                automatically on first create so the directory does not show up in{' '}
+                <code>git status</code>.
               </>
             ) : (
               'New worktrees will be created in the workspace directory below.'
